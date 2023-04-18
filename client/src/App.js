@@ -17,6 +17,7 @@ function App() {
         <img src={logo} className="App-logo" alt="logo" />
         <p>{!data ? "Loading..." : data}</p>
       </header>
+      return <button onClick={() => methodDoesNotExist()}>Break the world</button>;
     </div>
   );
 }
