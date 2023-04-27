@@ -8,6 +8,29 @@ const PORT = process.env.PORT || 3001;
 
 const app = express();
 
+const emitSSE= (res, id, data) =>{
+  res.write('id: ' + id + '\n');
+  res.write("data: " + data + '\n\n');
+  //res.flush();
+}
+
+const handleSSE = (req, res) =>{
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive'
+  });
+  const id = (new Date()).toLocaleTimeString();
+  // Sends a SSE every 3 seconds on a single connection.
+  setInterval(function() {
+    emitSSE(res, id, (new Date()).toLocaleTimeString());
+  }, 3000);
+
+  emitSSE(res, id, (new Date()).toLocaleTimeString());
+}
+
+app.get("/stream", handleSSE)
+
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
 });
@@ -23,8 +46,9 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
 app.use(express.static(path.resolve(__dirname, '../client/build')));
 
 // Handle GET requests to /api route
-app.get("/api", (req, res) => {
-  res.json({ message: "Hello from server!" });
+app.post("/api", (req, res) => {
+  
+  res.json({requestBody: req.body})
 });
 
 //Route that handles login logic

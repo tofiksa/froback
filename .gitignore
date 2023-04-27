@@ -1,3 +1,7 @@
+node_modules/*
+node_modules/.*
+node_modules/.package-lock.json
+
 *.class
 
 # Mobile Tools for Java (J2ME)

@@ -5,10 +5,18 @@ import "./App.css";
 function App() {
   const [data, setData] = React.useState(null);
 
+  const url = "http://localhost:3001/stream"
+  //url can be your server url
+
+  
+
   React.useEffect(() => {
-    fetch("/api")
-      .then((res) => res.json())
-      .then((data) => setData(data.message));
+    if ('EventSource' in window) {
+      let source = new EventSource(url)
+      source.addEventListener('message', function(e) {     
+        console.log(e.data);
+      }, false);
+    }
   }, []);
 
   return (
