@@ -1,63 +1,52 @@
-// server/index.js
-const path = require('path');
 const express = require('express');
-const bodyParser = require('body-parser')
-const cors = require('cors')
-
-const PORT = process.env.PORT || 3001;
+const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const app = express();
+const PORT = 3001;
 
-const emitSSE= (res, id, data) =>{
-  res.write('id: ' + id + '\n');
-  res.write("data: " + data + '\n\n');
-  //res.flush();
-}
+app.use(bodyParser.json());
 
-const handleSSE = (req, res) =>{
-  res.writeHead(200, {
+// enable CORS
+app.use(cors());
+
+// store data from POST request
+let data = {};
+
+// POST endpoint to receive data
+app.post('/data', (req, res) => {
+  data = req.body;
+  res.send('Data received!');
+});
+
+// GET endpoint to send event stream
+app.get('/stream', (req, res) => {
+  res.set({
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive'
   });
+
   const id = (new Date()).toLocaleTimeString();
-  // Sends a SSE every 3 seconds on a single connection.
-  setInterval(function() {
-    emitSSE(res, id, (new Date()).toLocaleTimeString());
-  }, 3000);
 
-  emitSSE(res, id, (new Date()).toLocaleTimeString());
-}
+  // send the data in event stream format
+  const eventData = `id: ${id}\ndata: ${JSON.stringify(data)}\n\n`;
+  res.write(eventData);
 
-app.get("/stream", handleSSE)
+  // keep the connection open and send SSE every 5 seconds
+  const intervalId = setInterval( async () => {
+    const newId = (new Date()).toLocaleTimeString();
+    const newData = `id: ${newId}\ndata: ${JSON.stringify(data)}\n\n`;
+    res.write('event: message\n');  // message event
+    res.write(newData);
+  }, 5000);
+
+  // end the connection when client disconnects
+  req.on('close', () => {
+    clearInterval(intervalId);
+  });
+});
 
 app.listen(PORT, () => {
-  console.log(`Server listening on ${PORT}`);
-});
-
-app.use( bodyParser.json() );       // to support JSON-encoded bodies
-
-app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
-  extended: true})); 
- app.use(cors())
- 
-
-// Have Node serve the files for our built React app
-app.use(express.static(path.resolve(__dirname, '../client/build')));
-
-// Handle GET requests to /api route
-app.post("/api", (req, res) => {
-  
-  res.json({requestBody: req.body})
-});
-
-//Route that handles login logic
-app.post('/login', (req, res) =>{
-  console.log(req.body.username) 
-  console.log(req.body.password) 
-})
-
-// All other GET requests not handled before will return our React app
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
+  console.log(`Server listening on port ${PORT}`);
 });

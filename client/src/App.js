@@ -14,7 +14,7 @@ function App() {
     if ('EventSource' in window) {
       let source = new EventSource(url)
       source.addEventListener('message', function(e) {     
-        console.log(e.data);
+        setData(JSON.parse(e.data).navn);
       }, false);
     }
   }, []);
